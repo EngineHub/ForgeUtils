@@ -1,0 +1,17 @@
+[{
+    "modid": "EngineHubForgeUtils",
+    "name": "EngineHub Forge Utils",
+    "version": "${internalVersion}",
+    "mcversion": "${mcversion}",
+    "url": "http://enginehub.org",
+    "authorList": ["wizjany"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "requiredMods": [
+        "Forge@[${forgeVersion},)"
+    ],
+    "dependencies": [
+        "Forge@[${forgeVersion},)"
+    ]
+}]

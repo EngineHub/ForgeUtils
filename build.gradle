@@ -1,0 +1,58 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+    }
+}
+
+apply plugin: 'forge'
+
+minecraft {
+    forgeVersion = "11.14.3.1499"
+    version = "1.8-$forgeVersion"
+    internalVersion = version + "1.0"
+    runDir = "eclipse"
+
+    replaceIn "com/sk89q/worldedit/internal/util/WorldEditRegistryTool.java"
+    replace "%VERSION%", project.version
+
+    mappings = "snapshot_20141130"
+}
+
+dependencies {
+    compile group: 'com.google.code.gson', name: 'gson', version:'2.3.1'
+    compile group: 'org.beanshell', name: 'bsh', version:'2.0b5'
+}
+
+processResources
+{
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        // replace version and mcversion
+        expand 'version': project.version,
+                'mcVersion': project.minecraft.version,
+                'forgeVersion': project.minecraft.forgeVersion,
+                'internalVersion': internalVersion
+    }
+        
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}

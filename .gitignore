@@ -1,0 +1,8 @@
+.idea
+MinecraftForge*
+eclipse/
+forge*
+*.iml
+*.txt
+build/
+.gradle
