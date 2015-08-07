@@ -140,7 +140,11 @@ public class BlockRegistryDumper {
         map.put("adventureModeExempt", getField(m, Material.class, "isAdventureModeExempt", "field_85159_M"));
         //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
 
-        map.put("ambientOcclusionLightValue", b.getAmbientOcclusionLightValue());
+        try {
+            map.put("ambientOcclusionLightValue", b.getAmbientOcclusionLightValue());
+        } catch (NoSuchMethodError ignored) {
+            map.put("ambientOcclusionLightValue", b.isSolidFullCube() ? 0.2F : 1.0F);
+        }
         map.put("grassBlocking", false); // idk what this property was originally supposed to be...grass uses a combination of light values to check growth
         return map;
     }
