@@ -1,6 +1,6 @@
 [{
-    "modid": "EngineHubForgeUtils",
-    "name": "EngineHub Forge Utils",
+    "modid": "ForgeUtils",
+    "name": "Forge Utils",
     "version": "${internalVersion}",
     "mcversion": "${mcversion}",
     "url": "http://enginehub.org",

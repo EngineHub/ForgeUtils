@@ -13,18 +13,25 @@ buildscript {
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
     }
+    ext {
+        forgeversion = "11.14.3.1499"
+        mcversion = "1.8"
+    }
 }
 
 apply plugin: 'forge'
 
+group = 'org.enginehub'
+version = '1.0'
+archivesBaseName = 'ForgeUtils'
+
 minecraft {
-    forgeVersion = "11.14.3.1499"
-    version = "1.8-$forgeVersion"
-    internalVersion = version + "1.0"
+    version = mcversion + "-" + forgeversion
+
     runDir = "eclipse"
 
-    replaceIn "com/sk89q/worldedit/internal/util/WorldEditRegistryTool.java"
-    replace "%VERSION%", project.version
+    replace "%VERSION%", version + "-" + forgeversion + ";" + project.version
+    replaceIn "org/enginehub/util/forge/ForgeUtils.java"
 
     mappings = "snapshot_20141130"
 }
@@ -34,23 +41,22 @@ dependencies {
     compile group: 'org.beanshell', name: 'bsh', version:'2.0b5'
 }
 
-processResources
-{
+processResources {
     // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
+    inputs.property "internalVersion", project.version
+    inputs.property "forgeVersion", forgeversion
+    inputs.property "mcversion", mcversion
 
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
                 
         // replace version and mcversion
-        expand 'version': project.version,
-                'mcVersion': project.minecraft.version,
-                'forgeVersion': project.minecraft.forgeVersion,
-                'internalVersion': internalVersion
+        expand 'mcversion': project.minecraft.version,
+                'internalVersion': project.version,
+                'forgeVersion': forgeversion
     }
-        
+
     // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'

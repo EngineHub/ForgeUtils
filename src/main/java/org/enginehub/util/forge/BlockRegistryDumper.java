@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,7 +44,7 @@ public class BlockRegistryDumper {
     }
 
     public void run() throws Exception {
-        List<Map<String, Object>> list = new LinkedList<>();
+        List<Map<String, Object>> list = new LinkedList<Map<String, Object>>();
 
         FMLControlledNamespacedRegistry<Block> registry = GameData.getBlockRegistry();
         Map map = null;
@@ -62,15 +63,14 @@ public class BlockRegistryDumper {
             list.add(getProperties(e));
         }
 
-        Collections.sort(list, (Map<String, Object> a, Map<String, Object> b)
-                -> ((Integer) a.get("legacyId")).compareTo((Integer) b.get("legacyId")));
+        Collections.sort(list, new MapComparator());
         String out = gson.toJson(list);
         this.write(out);
         FMLLog.info("Wrote file: %s", file.getAbsolutePath());
     }
 
     private Map<String, Object> getProperties(Entry e) {
-        Map<String, Object> map = new LinkedHashMap<>();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
         Block b = (Block) e.getKey();
         map.put("legacyId", Block.getIdFromBlock(b));
         map.put("id", e.getValue().toString());
@@ -82,7 +82,7 @@ public class BlockRegistryDumper {
     }
 
     private Map<String, Map> getStates(Block b) {
-        Map<String, Map> map = new LinkedHashMap<>();
+        Map<String, Map> map = new LinkedHashMap<String, Map>();
         BlockState bs = b.getBlockState();
         Collection<IProperty> props = bs.getProperties();
         for (IProperty prop : props) {
@@ -96,11 +96,11 @@ public class BlockRegistryDumper {
         //BlockState bs = b.getBlockState();
         IBlockState base = b.getStateFromMeta(0);
 
-        Map<String, Object> dataMap = new LinkedHashMap<>();
-        Map<String, Object> valueMap = new LinkedHashMap<>();
+        Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+        Map<String, Object> valueMap = new LinkedHashMap<String, Object>();
         int maxData = -1;
         for (Comparable val : (Iterable<Comparable>) prop.getAllowedValues()) {
-            Map<String, Object> stateMap = new LinkedHashMap<>();
+            Map<String, Object> stateMap = new LinkedHashMap<String, Object>();
             int dv = b.getMetaFromState(base.withProperty(prop, val));
             stateMap.put("data", dv);
 
@@ -115,14 +115,14 @@ public class BlockRegistryDumper {
             }
             valueMap.put(prop.getName(val), stateMap);
         }
-        // i feel like there's some way to do this huge tertiary condition chain with a bitwise expression...maybe
+        // this should work mostly? might be up to worldedit's data tests to check everything
         if (maxData != -1) dataMap.put("dataMask", maxData > 12 ? 15 : (maxData > 8 ? 12 : (maxData > 4 ? 7 : (maxData > 0 ? 3 : 0))));
         dataMap.put("values", valueMap);
         return dataMap;
     }
 
     private Map<String, Object> getMaterial(Block b) {
-        Map<String, Object> map = new LinkedHashMap<>();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("powerSource", b.canProvidePower());
         map.put("lightOpacity", b.getLightOpacity());
         map.put("lightValue", b.getLightValue());
@@ -158,7 +158,8 @@ public class BlockRegistryDumper {
             Field f = clazz.getDeclaredField(name);
             f.setAccessible(true);
             return f.get(obj);
-        } catch (IllegalAccessException | NoSuchFieldException ignored) {
+        } catch (IllegalAccessException ignored) {
+        } catch (NoSuchFieldException ignored) {
         }
         return null;
     }
@@ -195,4 +196,10 @@ public class BlockRegistryDumper {
         }
     }
 
+    private static class MapComparator implements Comparator<Map<String, Object>> {
+        @Override
+        public int compare(Map<String, Object> a, Map<String, Object> b) {
+            return ((Integer) a.get("legacyId")).compareTo((Integer) b.get("legacyId"));
+        }
+    }
 }
