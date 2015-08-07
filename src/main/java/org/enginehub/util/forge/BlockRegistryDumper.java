@@ -97,52 +97,59 @@ public class BlockRegistryDumper {
         IBlockState base = b.getStateFromMeta(0);
 
         Map<String, Object> dataMap = new LinkedHashMap<>();
-        int dataMask = -1;
+        Map<String, Object> valueMap = new LinkedHashMap<>();
+        int maxData = -1;
         for (Comparable val : (Iterable<Comparable>) prop.getAllowedValues()) {
-            Map<String, Object> valueMap = new LinkedHashMap<>();
+            Map<String, Object> stateMap = new LinkedHashMap<>();
             int dv = b.getMetaFromState(base.withProperty(prop, val));
-            valueMap.put("data", dv);
+            stateMap.put("data", dv);
 
             // TODO devise fix for state data which relies on other states
             // i.e. some bits have different meanings depending on other bits
             // also datamask is mostly legacy and also subject to the above issue
-            if (dv > dataMask) dataMask = dv;
+            if (dv > maxData) maxData = dv;
 
             if (prop instanceof PropertyDirection) {
                 Vec3i vec = EnumFacing.byName(val.toString()).getDirectionVec();
-                valueMap.put("direction", vec);
+                stateMap.put("direction", vec);
             }
-            dataMap.put(prop.getName(val), valueMap);
+            valueMap.put(prop.getName(val), stateMap);
         }
-        if (dataMask != -1) dataMap.put("dataMask", dataMask);
+        // i feel like there's some way to do this huge tertiary condition chain with a bitwise expression...maybe
+        if (maxData != -1) dataMap.put("dataMask", maxData > 12 ? 15 : (maxData > 8 ? 12 : (maxData > 4 ? 7 : (maxData > 0 ? 3 : 0))));
+        dataMap.put("values", valueMap);
         return dataMap;
     }
 
     private Map<String, Object> getMaterial(Block b) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("powerProvider", b.canProvidePower());
+        map.put("powerSource", b.canProvidePower());
         map.put("lightOpacity", b.getLightOpacity());
         map.put("lightValue", b.getLightValue());
-        map.put("usesNeighborLight", b.getUseNeighborBrightness());
-        map.put("hardness", getField(b, Block.class, "hardness"));
-        map.put("resistance", getField(b, Block.class, "resistance"));
-        map.put("randomTicks", b.getTickRandomly());
+        map.put("usingNeighborLight", b.getUseNeighborBrightness());
+        map.put("hardness", getField(b, Block.class, "blockHardness"));
+        map.put("resistance", getField(b, Block.class, "blockResistance"));
+        map.put("ticksRandomly", b.getTickRandomly());
         map.put("fullCube", b.isFullCube());
-        map.put("fullBlock", b.isFullBlock());
-        map.put("fullCube", b.isFullCube());
+        map.put("slipperiness", b.slipperiness);
+        map.put("renderedAsNormalBlock", b.isFullBlock());
+        //map.put("solidFullCube", b.isSolidFullCube());
         Material m = b.getMaterial();
         map.put("liquid", m.isLiquid());
         map.put("solid", m.isSolid());
-        map.put("blocksMovement", m.blocksMovement());
-        map.put("blocksLight", m.blocksLight());
-        map.put("flammable", m.getCanBurn());
+        map.put("movementBlocker", m.blocksMovement());
+        //map.put("blocksLight", m.blocksLight());
+        map.put("burnable", m.getCanBurn());
         map.put("opaque", m.isOpaque());
-        map.put("replaceable", m.isReplaceable());
-        map.put("noToolRequired", m.isToolNotRequired());
-        map.put("mobility", m.getMaterialMobility());
-        map.put("adventureModeExempt", getField(m, Material.class, "isAdventureModExempt"));
-        map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
+        map.put("replacedDuringPlacement", m.isReplaceable());
+        map.put("toolRequired", !m.isToolNotRequired());
+        map.put("fragileWhenPushed", m.getMaterialMobility() == 1);
+        map.put("unpushable", m.getMaterialMobility() == 2);
+        map.put("adventureModeExempt", getField(m, Material.class, "isAdventureModeExempt"));
+        //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
 
+        map.put("ambientOcclusionLightValue", b.getAmbientOcclusionLightValue());
+        map.put("grassBlocking", false); // idk what this property was originally supposed to be...grass uses a combination of light values to check growth
         return map;
     }
 
@@ -176,21 +183,15 @@ public class BlockRegistryDumper {
     public static class Vec3iAdapter extends TypeAdapter<Vec3i> {
         @Override
         public Vec3i read(final JsonReader in) throws IOException {
-            // warning not guaranteed to work
-            Vec3i vec;
-            int x, y, z;
-            String s = in.nextString();
-            s = s.substring(1, s.length() - 1);
-            String[] sA = s.split(",");
-            x = Integer.parseInt(sA[0]);
-            y = Integer.parseInt(sA[1]);
-            z = Integer.parseInt(sA[2]);
-            vec = new Vec3i(x, y, z);
-            return vec;
+            throw new UnsupportedOperationException();
         }
         @Override
         public void write(final JsonWriter out, final Vec3i vec) throws IOException {
-            out.value("[" + vec.getX() + "," + vec.getY() + "," + vec.getZ() + "]");
+            out.beginArray();
+            out.value(vec.getX());
+            out.value(vec.getY());
+            out.value(vec.getZ());
+            out.endArray();
         }
     }
 
