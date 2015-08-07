@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
         maven {
             name = "forge"
             url = "http://files.minecraftforge.net/maven"
@@ -12,6 +13,7 @@ buildscript {
     }
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
     }
     ext {
         forgeversion = "11.14.3.1499"
@@ -20,6 +22,7 @@ buildscript {
 }
 
 apply plugin: 'forge'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 group = 'org.enginehub'
 version = '1.0'
@@ -62,3 +65,28 @@ processResources {
         exclude 'mcmod.info'
     }
 }
+
+shadowJar {
+    dependencies {
+        include(dependency('org.beanshell:bsh'))
+        relocate('bsh', 'org.enginehub.util.bsh')
+        exclude 'net/minecraftforge/**'
+        exclude 'Gradle*'
+        exclude '.cache'
+    }
+}
+
+reobf.reobf(shadowJar) { spec ->
+    spec.classpath = sourceSets.main.compileClasspath;
+}
+
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    classifier = 'dev'
+}
+
+artifacts {
+    archives deobfJar
+}
+
+build.dependsOn(shadowJar)
