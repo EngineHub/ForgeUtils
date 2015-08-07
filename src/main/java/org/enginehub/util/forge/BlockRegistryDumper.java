@@ -47,15 +47,7 @@ public class BlockRegistryDumper {
         List<Map<String, Object>> list = new LinkedList<Map<String, Object>>();
 
         FMLControlledNamespacedRegistry<Block> registry = GameData.getBlockRegistry();
-        Map map = null;
-        try {
-            Field fd = registry.getClass().getSuperclass().getSuperclass().getDeclaredField("field_148758_b");
-            fd.setAccessible(true);
-            map = (Map) fd.get(registry);
-        } catch (IllegalAccessException ignored) {
-        } catch (NoSuchFieldException e) {
-            FMLLog.severe("Error accessing registry map:" + e);
-        }
+        Map map = (Map) getField(registry, registry.getClass().getSuperclass().getSuperclass(), "field_148758_b", "field_148758_b");
         if (map == null) {
             throw new Exception("Couldn't find map field from registry.");
         }
@@ -127,8 +119,8 @@ public class BlockRegistryDumper {
         map.put("lightOpacity", b.getLightOpacity());
         map.put("lightValue", b.getLightValue());
         map.put("usingNeighborLight", b.getUseNeighborBrightness());
-        map.put("hardness", getField(b, Block.class, "blockHardness"));
-        map.put("resistance", getField(b, Block.class, "blockResistance"));
+        map.put("hardness", getField(b, Block.class, "blockHardness", "field_149782_v"));
+        map.put("resistance", getField(b, Block.class, "blockResistance", "field_149781_w"));
         map.put("ticksRandomly", b.getTickRandomly());
         map.put("fullCube", b.isFullCube());
         map.put("slipperiness", b.slipperiness);
@@ -145,7 +137,7 @@ public class BlockRegistryDumper {
         map.put("toolRequired", !m.isToolNotRequired());
         map.put("fragileWhenPushed", m.getMaterialMobility() == 1);
         map.put("unpushable", m.getMaterialMobility() == 2);
-        map.put("adventureModeExempt", getField(m, Material.class, "isAdventureModeExempt"));
+        map.put("adventureModeExempt", getField(m, Material.class, "isAdventureModeExempt", "field_85159_M"));
         //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
 
         map.put("ambientOcclusionLightValue", b.getAmbientOcclusionLightValue());
@@ -153,9 +145,15 @@ public class BlockRegistryDumper {
         return map;
     }
 
-    private Object getField(Object obj, Class<?> clazz, String name) {
+    private Object getField(Object obj, Class<?> clazz, String name, String obfName) {
         try {
-            Field f = clazz.getDeclaredField(name);
+            Field f;
+            try {
+                f = clazz.getDeclaredField(name);
+            } catch (NoSuchFieldException ignored) {
+                f = clazz.getDeclaredField(obfName);
+            }
+            if (f == null) return null;
             f.setAccessible(true);
             return f.get(obj);
         } catch (IllegalAccessException ignored) {
