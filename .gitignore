@@ -1,7 +1,7 @@
 .idea
 MinecraftForge*
 eclipse/
-forge*
+forge*.txt
 *.iml
 *.txt
 build/
