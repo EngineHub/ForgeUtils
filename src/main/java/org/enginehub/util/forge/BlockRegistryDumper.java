@@ -6,13 +6,14 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import net.minecraft.block.Block;
+import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.Vec3i;
+import net.minecraft.util.math.Vec3i;
 import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.registry.FMLControlledNamespacedRegistry;
 import net.minecraftforge.fml.common.registry.GameData;
@@ -47,7 +48,7 @@ public class BlockRegistryDumper {
         List<Map<String, Object>> list = new LinkedList<Map<String, Object>>();
 
         FMLControlledNamespacedRegistry<Block> registry = GameData.getBlockRegistry();
-        Map map = (Map) getField(registry, registry.getClass().getSuperclass().getSuperclass(), "field_148758_b", "field_148758_b");
+        Map map = (Map) getField(registry, registry.getClass().getSuperclass().getSuperclass(), "inverseObjectRegistry", "field_148758_b");
         if (map == null) {
             throw new Exception("Couldn't find map field from registry.");
         }
@@ -75,8 +76,8 @@ public class BlockRegistryDumper {
 
     private Map<String, Map> getStates(Block b) {
         Map<String, Map> map = new LinkedHashMap<String, Map>();
-        BlockState bs = b.getBlockState();
-        Collection<IProperty> props = bs.getProperties();
+        BlockStateContainer bs = b.getBlockState();
+        Collection<IProperty<?>> props = bs.getProperties();
         for (IProperty prop : props) {
             map.put(prop.getName(), dataValues(b, prop));
         }
@@ -114,19 +115,20 @@ public class BlockRegistryDumper {
     }
 
     private Map<String, Object> getMaterial(Block b) {
+        IBlockState bs = b.getDefaultState();
         Map<String, Object> map = new LinkedHashMap<String, Object>();
-        map.put("powerSource", b.canProvidePower());
-        map.put("lightOpacity", b.getLightOpacity());
-        map.put("lightValue", b.getLightValue());
-        map.put("usingNeighborLight", b.getUseNeighborBrightness());
+        map.put("powerSource", b.canProvidePower(bs));
+        map.put("lightOpacity", b.getLightOpacity(bs));
+        map.put("lightValue", b.getLightValue(bs));
+        map.put("usingNeighborLight", b.getUseNeighborBrightness(bs));
         map.put("hardness", getField(b, Block.class, "blockHardness", "field_149782_v"));
         map.put("resistance", getField(b, Block.class, "blockResistance", "field_149781_w"));
         map.put("ticksRandomly", b.getTickRandomly());
-        map.put("fullCube", b.isFullCube());
+        map.put("fullCube", b.isFullCube(bs));
         map.put("slipperiness", b.slipperiness);
-        map.put("renderedAsNormalBlock", b.isFullBlock());
+        map.put("renderedAsNormalBlock", b.isFullBlock(bs));
         //map.put("solidFullCube", b.isSolidFullCube());
-        Material m = b.getMaterial();
+        Material m = b.getMaterial(bs);
         map.put("liquid", m.isLiquid());
         map.put("solid", m.isSolid());
         map.put("movementBlocker", m.blocksMovement());
@@ -135,15 +137,15 @@ public class BlockRegistryDumper {
         map.put("opaque", m.isOpaque());
         map.put("replacedDuringPlacement", m.isReplaceable());
         map.put("toolRequired", !m.isToolNotRequired());
-        map.put("fragileWhenPushed", m.getMaterialMobility() == 1);
-        map.put("unpushable", m.getMaterialMobility() == 2);
+        map.put("fragileWhenPushed", m.getMobilityFlag() == EnumPushReaction.DESTROY);
+        map.put("unpushable", m.getMobilityFlag() == EnumPushReaction.BLOCK);
         map.put("adventureModeExempt", getField(m, Material.class, "isAdventureModeExempt", "field_85159_M"));
         //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
 
         try {
-            map.put("ambientOcclusionLightValue", b.getAmbientOcclusionLightValue());
+            map.put("ambientOcclusionLightValue", b.getAmbientOcclusionLightValue(bs));
         } catch (NoSuchMethodError ignored) {
-            map.put("ambientOcclusionLightValue", b.isSolidFullCube() ? 0.2F : 1.0F);
+            map.put("ambientOcclusionLightValue", b.isBlockNormalCube(bs) ? 0.2F : 1.0F);
         }
         map.put("grassBlocking", false); // idk what this property was originally supposed to be...grass uses a combination of light values to check growth
         return map;

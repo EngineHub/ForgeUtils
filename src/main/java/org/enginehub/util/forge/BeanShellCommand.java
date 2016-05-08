@@ -4,12 +4,14 @@ import bsh.EvalError;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import bsh.Interpreter;
+import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.ChatStyle;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +27,7 @@ public class BeanShellCommand implements ICommand {
     }
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return "beanshell";
     }
 
@@ -35,58 +37,52 @@ public class BeanShellCommand implements ICommand {
     }
 
     @Override
-    public List<String> getAliases() {
+    public List<String> getCommandAliases() {
         return this.aliases;
     }
 
     @Override
-    public void execute(ICommandSender icommandsender, String[] astring) {
-        if (astring.length == 0) {
-            icommandsender.addChatMessage(new ChatComponentText("No args given."));
+    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
+        if (args.length == 0) {
+            sender.addChatMessage(new TextComponentString("No args given."));
             return;
         }
 
-        Interpreter in = get(icommandsender).getInterpreter();
+        Interpreter in = get(sender).getInterpreter();
         try {
-            String s = Joiner.on(' ').join(astring);
-            icommandsender.addChatMessage(
-                    new ChatComponentText("$ ").setChatStyle(GREEN)
-                            .appendSibling(new ChatComponentText(s).setChatStyle(GRAY)));
+            String s = Joiner.on(' ').join(args);
+            sender.addChatMessage(
+                    new TextComponentString("$ ").setStyle(GREEN)
+                            .appendSibling(new TextComponentString(s).setStyle(GRAY)));
             Object obj = in.eval(s);
-            icommandsender.addChatMessage(
-                    new ChatComponentText("> ").setChatStyle(GREEN)
-                            .appendSibling(obj == null ? new ChatComponentText("null").setChatStyle(RED)
-                                                       : new ChatComponentText(obj.toString())));
+            sender.addChatMessage(
+                    new TextComponentString("> ").setStyle(GREEN)
+                            .appendSibling(obj == null ? new TextComponentString("null").setStyle(RED)
+                                    : new TextComponentString(obj.toString())));
         } catch (EvalError e) {
-            icommandsender.addChatMessage(
-                    new ChatComponentText(">> ").setChatStyle(RED)
-                            .appendSibling(new ChatComponentText(e.toString())));
+            sender.addChatMessage(
+                    new TextComponentString(">> ").setStyle(RED)
+                            .appendSibling(new TextComponentString(e.toString())));
         }
-
-    }
-
-    private static ChatStyle RED = new ChatStyle().setColor(EnumChatFormatting.RED);
-    private static ChatStyle GREEN = new ChatStyle().setColor(EnumChatFormatting.GREEN);
-    private static ChatStyle GRAY = new ChatStyle().setColor(EnumChatFormatting.GRAY);
-
-    @Override
-    public boolean canCommandSenderUse(ICommandSender icommandsender) {
-        return true;
     }
 
     @Override
-    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
-        return null;
-    }
-
-    @Override
-    public boolean isUsernameIndex(String[] astring, int i) {
+    public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
         return false;
     }
 
     @Override
-    public int compareTo(Object o) {
-        return 0;
+    public List<String> getTabCompletionOptions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos pos) {
+        return null;
+    }
+
+    private static Style RED = new Style().setColor(TextFormatting.RED);
+    private static Style GREEN = new Style().setColor(TextFormatting.GREEN);
+    private static Style GRAY = new Style().setColor(TextFormatting.GRAY);
+
+    @Override
+    public boolean isUsernameIndex(String[] astring, int i) {
+        return false;
     }
 
     private Map<ICommandSender, InterpreterSession> sessions = Maps.newHashMap();
@@ -99,10 +95,15 @@ public class BeanShellCommand implements ICommand {
             try {
                 session.getInterpreter().set("me", key);
             } catch (EvalError e) {
-                key.addChatMessage(new ChatComponentText("couldn't set 'me' var in interpreter:\n" + e));
+                key.addChatMessage(new TextComponentString("couldn't set 'me' var in interpreter:\n" + e));
             }
         }
         return session;
+    }
+
+    @Override
+    public int compareTo(ICommand o) {
+        return 0;
     }
 
     public static class InterpreterSession {
