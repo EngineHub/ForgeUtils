@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -91,16 +92,13 @@ public class BlockRegistryDumper {
 
         Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
         Map<String, Object> valueMap = new LinkedHashMap<String, Object>();
-        int maxData = -1;
+        List<Integer> dvs = new ArrayList<Integer>();
         for (Comparable val : (Iterable<Comparable>) prop.getAllowedValues()) {
             Map<String, Object> stateMap = new LinkedHashMap<String, Object>();
             int dv = b.getMetaFromState(base.withProperty(prop, val));
             stateMap.put("data", dv);
 
-            // TODO devise fix for state data which relies on other states
-            // i.e. some bits have different meanings depending on other bits
-            // also datamask is mostly legacy and also subject to the above issue
-            if (dv > maxData) maxData = dv;
+            dvs.add(dv);
 
             if (prop instanceof PropertyDirection) {
                 Vec3i vec = EnumFacing.byName(val.toString()).getDirectionVec();
@@ -108,8 +106,50 @@ public class BlockRegistryDumper {
             }
             valueMap.put(prop.getName(val), stateMap);
         }
-        // this should work mostly? might be up to worldedit's data tests to check everything
-        if (maxData != -1) dataMap.put("dataMask", maxData > 12 ? 15 : (maxData > 8 ? 12 : (maxData > 4 ? 7 : (maxData > 0 ? 3 : 0))));
+
+        // attempt to calc mask
+        int dataMask = -1;
+        if (dvs.size() == 2) {
+            // binary states
+            if (dvs.contains(12)) {
+                dataMask = 12;
+            } if (dvs.contains(8)) {
+                dataMask = 8;
+            } else if (dvs.contains(4)) {
+                dataMask = 4;
+            } else if (dvs.contains(1)) {
+                dataMask = 1;
+            }
+        } else if (dvs.size() == 16) {
+            // full range - colors, rotation, etc
+            dataMask = 15;
+        } else if (prop.getName().equals("facing") || prop.getName().equals("shape")) {
+            // most directions go 0-x, but some are in the middle, so mask is the highest set of bits
+            if (dvs.size() == 4) {
+                if (dvs.contains(4) || dvs.contains(5) || dvs.contains(6) || dvs.contains(7)) {
+                    dataMask = 7;
+                } else {
+                    dataMask = 3;
+                }
+            } else {
+                if (dvs.contains(8) || dvs.contains(9) || dvs.contains(10) || dvs.contains(11)) {
+                    dataMask = 12;
+                } else {
+                    dataMask = 7;
+                }
+            }
+        } else {
+            // almost all "variant", but catch all for safety
+            int max = -1;
+            for (int dv : dvs) {
+                if (dv > max) max = dv;
+            }
+            // usually....
+            dataMask = (max > 12 ? 15 : (max > 8 ? 12 : (max == 8 ? 8 :
+                    (max > 4 ? 7 : (max == 4 ? 4 : (max > 1 ? 3 : max > 0 ? 1 : -1))))));
+        }
+        if (dataMask != -1) dataMap.put("dataMask", dataMask);
+
         dataMap.put("values", valueMap);
         return dataMap;
     }
