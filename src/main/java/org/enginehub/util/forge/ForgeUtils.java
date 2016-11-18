@@ -15,6 +15,7 @@ public class ForgeUtils {
 
     @EventHandler
     public void init(FMLPostInitializationEvent event) {
+        FMLLog.info("ForgeUtils loading.");
 
         try {
             if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocks"))) {
@@ -29,6 +30,7 @@ public class ForgeUtils {
     @EventHandler
     public void serverLoad(FMLServerStartingEvent event) {
         if ("true".equalsIgnoreCase(System.getProperty("enginehub.beanshell"))) {
+            FMLLog.info("ForgeUtils registering BeanShellCommand!");
             event.registerServerCommand(new BeanShellCommand());
         }
     }
