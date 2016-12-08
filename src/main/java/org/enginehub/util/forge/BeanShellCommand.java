@@ -27,40 +27,40 @@ public class BeanShellCommand implements ICommand {
     }
 
     @Override
-    public String getCommandName() {
+    public String getName() {
         return "beanshell";
     }
 
     @Override
-    public String getCommandUsage(ICommandSender icommandsender) {
+    public String getUsage(ICommandSender icommandsender) {
         return "bsh <eval>";
     }
 
     @Override
-    public List<String> getCommandAliases() {
+    public List<String> getAliases() {
         return this.aliases;
     }
 
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (args.length == 0) {
-            sender.addChatMessage(new TextComponentString("No args given."));
+            sender.sendMessage(new TextComponentString("No args given."));
             return;
         }
 
         Interpreter in = get(sender).getInterpreter();
         try {
             String s = Joiner.on(' ').join(args);
-            sender.addChatMessage(
+            sender.sendMessage(
                     new TextComponentString("$ ").setStyle(GREEN)
                             .appendSibling(new TextComponentString(s).setStyle(GRAY)));
             Object obj = in.eval(s);
-            sender.addChatMessage(
+            sender.sendMessage(
                     new TextComponentString("> ").setStyle(GREEN)
                             .appendSibling(obj == null ? new TextComponentString("null").setStyle(RED)
                                     : new TextComponentString(obj.toString())));
         } catch (EvalError e) {
-            sender.addChatMessage(
+            sender.sendMessage(
                     new TextComponentString(">> ").setStyle(RED)
                             .appendSibling(new TextComponentString(e.toString())));
         }
@@ -72,7 +72,7 @@ public class BeanShellCommand implements ICommand {
     }
 
     @Override
-    public List<String> getTabCompletionOptions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos pos) {
+    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos pos) {
         return null;
     }
 
@@ -95,7 +95,7 @@ public class BeanShellCommand implements ICommand {
             try {
                 session.getInterpreter().set("me", key);
             } catch (EvalError e) {
-                key.addChatMessage(new TextComponentString("couldn't set 'me' var in interpreter:\n" + e));
+                key.sendMessage(new TextComponentString("couldn't set 'me' var in interpreter:\n" + e));
             }
         }
         return session;

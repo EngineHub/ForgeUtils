@@ -16,8 +16,8 @@ buildscript {
         classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
     }
     ext {
-        forgeversion = "12.17.0.1965"
-        mcversion = "1.9.4"
+        forgeversion = "13.19.0.2153"
+        mcversion = "1.11"
     }
 }
 
@@ -36,7 +36,7 @@ minecraft {
     replace "%VERSION%", version + "-" + forgeversion + ";" + project.version
     replaceIn "org/enginehub/util/forge/ForgeUtils.java"
 
-    mappings = "snapshot_20160617"
+    mappings = "snapshot_20161119"
 }
 
 dependencies {
