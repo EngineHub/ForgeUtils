@@ -11,7 +11,7 @@ import java.io.File;
 @Mod(modid = ForgeUtils.MODID, name = "Forge Utils", version = "%VERSION%", acceptableRemoteVersions = "*")
 @SuppressWarnings("ALL")
 public class ForgeUtils {
-    public static final String MODID = "ForgeUtils";
+    public static final String MODID = "forgeutils";
 
     @EventHandler
     public void init(FMLPostInitializationEvent event) {
