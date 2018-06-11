@@ -13,11 +13,11 @@ import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
-import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.common.registry.FMLControlledNamespacedRegistry;
-import net.minecraftforge.fml.common.registry.GameData;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraftforge.registries.IForgeRegistry;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -33,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({"unchecked"})
 public class BlockRegistryDumper {
 
     private File file;
@@ -48,28 +47,24 @@ public class BlockRegistryDumper {
     }
 
     public void run() throws Exception {
-        List<Map<String, Object>> list = new LinkedList<Map<String, Object>>();
+        List<Map<String, Object>> list = new LinkedList<>();
 
-        FMLControlledNamespacedRegistry<Block> registry = GameData.getBlockRegistry();
-        Map map = (Map) getField(registry, registry.getClass().getSuperclass().getSuperclass(), "inverseObjectRegistry", "field_148758_b");
-        if (map == null) {
-            throw new Exception("Couldn't find map field from registry.");
-        }
-        for (Entry e : (Iterable<Entry>) map.entrySet()) {
+        IForgeRegistry<Block> registry = ForgeRegistries.BLOCKS;
+        for (Entry<ResourceLocation, Block> e : registry.getEntries()) {
             list.add(getProperties(e));
         }
 
-        Collections.sort(list, new MapComparator());
+        list.sort(new MapComparator());
         String out = gson.toJson(list);
         this.write(out);
-        FMLLog.info("Wrote file: %s", file.getAbsolutePath());
+        ForgeUtils.instance.modLogger.info("Wrote file: %s", file.getAbsolutePath());
     }
 
-    private Map<String, Object> getProperties(Entry e) {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        Block b = (Block) e.getKey();
+    private Map<String, Object> getProperties(Entry<ResourceLocation, Block> e) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        Block b = e.getValue();
         map.put("legacyId", Block.getIdFromBlock(b));
-        map.put("id", e.getValue().toString());
+        map.put("id", e.getKey().toString());
         map.put("unlocalizedName", b.getUnlocalizedName());
         map.put("localizedName", b.getLocalizedName());
         map.put("states", getStates(b));
@@ -78,7 +73,7 @@ public class BlockRegistryDumper {
     }
 
     private Map<String, Map> getStates(Block b) {
-        Map<String, Map> map = new LinkedHashMap<String, Map>();
+        Map<String, Map> map = new LinkedHashMap<>();
         BlockStateContainer bs = b.getBlockState();
         Collection<IProperty<?>> props = bs.getProperties();
         for (IProperty prop : props) {
@@ -120,11 +115,11 @@ public class BlockRegistryDumper {
         //BlockState bs = b.getBlockState();
         IBlockState base = b.getStateFromMeta(0);
 
-        Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-        Map<String, Object> valueMap = new LinkedHashMap<String, Object>();
-        List<Integer> dvs = new ArrayList<Integer>();
+        Map<String, Object> dataMap = new LinkedHashMap<>();
+        Map<String, Object> valueMap = new LinkedHashMap<>();
+        List<Integer> dvs = new ArrayList<>();
         for (Comparable val : (Iterable<Comparable>) prop.getAllowedValues()) {
-            Map<String, Object> stateMap = new LinkedHashMap<String, Object>();
+            Map<String, Object> stateMap = new LinkedHashMap<>();
             int dv = b.getMetaFromState(base.withProperty(prop, val));
             stateMap.put("data", dv);
 
@@ -143,36 +138,45 @@ public class BlockRegistryDumper {
                     stateMap.put("direction", addDirection(stateMap.get("direction"), new Vec3i(0, -1, 0)));
                 }
             } else if (prop.getName().equals("axis")) {
-                if (prop.getName(val).equals("x")) {
-                    stateMap.put("direction", new Vec3i(1, 0, 0));
-                    addAfter = new LinkedHashMap<String, Object>();
-                    addAfter.put("data", dv);
-                    addAfter.put("direction", new Vec3i(-1, 0, 0));
-                    addAfterName = "-x";
-                } else if (prop.getName(val).equals("y")) {
-                    stateMap.put("direction", new Vec3i(0, 1, 0));
-                    addAfter = new LinkedHashMap<String, Object>();
-                    addAfter.put("data", dv);
-                    addAfter.put("direction", new Vec3i(0, -1, 0));
-                    addAfterName = "-y";
-                } else if (prop.getName(val).equals("z")) {
-                    stateMap.put("direction", new Vec3i(0, 0, 1));
-                    addAfter = new LinkedHashMap<String, Object>();
-                    addAfter.put("data", dv);
-                    addAfter.put("direction", new Vec3i(0, 0, -1));
-                    addAfterName = "-z";
+                switch (prop.getName(val)) {
+                    case "x":
+                        stateMap.put("direction", new Vec3i(1, 0, 0));
+                        addAfter = new LinkedHashMap<>();
+                        addAfter.put("data", dv);
+                        addAfter.put("direction", new Vec3i(-1, 0, 0));
+                        addAfterName = "-x";
+                        break;
+                    case "y":
+                        stateMap.put("direction", new Vec3i(0, 1, 0));
+                        addAfter = new LinkedHashMap<>();
+                        addAfter.put("data", dv);
+                        addAfter.put("direction", new Vec3i(0, -1, 0));
+                        addAfterName = "-y";
+                        break;
+                    case "z":
+                        stateMap.put("direction", new Vec3i(0, 0, 1));
+                        addAfter = new LinkedHashMap<>();
+                        addAfter.put("data", dv);
+                        addAfter.put("direction", new Vec3i(0, 0, -1));
+                        addAfterName = "-z";
+                        break;
                 }
             } else if (prop.getName().equals("rotation")) {
                 stateMap.put("direction", rotations[Integer.valueOf(prop.getName(val))]);
             } else if (prop.getName().equals("facing")) { // usually already instanceof PropertyDirection, unless it's a lever
-                if (prop.getName(val).equals("south")) {
-                    stateMap.put("direction", new Vec3i(0, 0, 1));
-                } else if (prop.getName(val).equals("north")) {
-                    stateMap.put("direction", new Vec3i(0, 0, -1));
-                } else if (prop.getName(val).equals("west")) {
-                    stateMap.put("direction", new Vec3i(-1, 0, 0));
-                } else if (prop.getName(val).equals("east")) {
-                    stateMap.put("direction", new Vec3i(1, 0, 0));
+                switch (prop.getName(val)) {
+                    case "south":
+                        stateMap.put("direction", new Vec3i(0, 0, 1));
+                        break;
+                    case "north":
+                        stateMap.put("direction", new Vec3i(0, 0, -1));
+                        break;
+                    case "west":
+                        stateMap.put("direction", new Vec3i(-1, 0, 0));
+                        break;
+                    case "east":
+                        stateMap.put("direction", new Vec3i(1, 0, 0));
+                        break;
                 }
                 /*
                 // TODO fix these levers. they disappear right now
@@ -222,7 +226,7 @@ public class BlockRegistryDumper {
 
     private Map<String, Object> getMaterial(Block b) {
         IBlockState bs = b.getDefaultState();
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<>();
         map.put("powerSource", b.canProvidePower(bs));
         map.put("lightOpacity", b.getLightOpacity(bs));
         map.put("lightValue", b.getLightValue(bs));
@@ -268,8 +272,7 @@ public class BlockRegistryDumper {
             if (f == null) return null;
             f.setAccessible(true);
             return f.get(obj);
-        } catch (IllegalAccessException ignored) {
-        } catch (NoSuchFieldException ignored) {
+        } catch (IllegalAccessException | NoSuchFieldException ignored) {
         }
         return null;
     }
@@ -286,7 +289,7 @@ public class BlockRegistryDumper {
             FileOutputStream str = new FileOutputStream(file);
             str.write(s.getBytes());
         } catch (IOException e) {
-            FMLLog.severe("Error writing registry dump: %e", e);
+            ForgeUtils.instance.modLogger.error("Error writing registry dump: %e", e);
         }
     }
 
@@ -314,9 +317,9 @@ public class BlockRegistryDumper {
         @Override
         public void write(final JsonWriter out, final Vec3d vec) throws IOException {
             out.beginArray();
-            out.value(vec.xCoord);
-            out.value(vec.yCoord);
-            out.value(vec.zCoord);
+            out.value(vec.x);
+            out.value(vec.y);
+            out.value(vec.z);
             out.endArray();
         }
     }

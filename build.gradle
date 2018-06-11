@@ -12,12 +12,12 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
     }
     ext {
-        forgeversion = "13.19.0.2153"
-        mcversion = "1.11"
+        forgeversion = "14.23.4.2705"
+        mcversion = "1.12.2"
     }
 }
 
@@ -28,6 +28,9 @@ group = 'org.enginehub'
 version = '1.0'
 archivesBaseName = 'ForgeUtils'
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 minecraft {
     version = mcversion + "-" + forgeversion
 
@@ -36,7 +39,7 @@ minecraft {
     replace "%VERSION%", version + "-" + forgeversion + ";" + project.version
     replaceIn "org/enginehub/util/forge/ForgeUtils.java"
 
-    mappings = "snapshot_20161119"
+    mappings = "snapshot_20180611"
 }
 
 dependencies {

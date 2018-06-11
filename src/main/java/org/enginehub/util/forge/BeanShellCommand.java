@@ -21,7 +21,7 @@ public class BeanShellCommand implements ICommand {
     private List<String> aliases;
 
     public BeanShellCommand() {
-        this.aliases = new ArrayList<String>();
+        this.aliases = new ArrayList<>();
         this.aliases.add("bsh");
         this.aliases.add(">");
     }
