@@ -1,6 +1,6 @@
-package org.enginehub.util.forge;
+package org.enginehub.util.forge.dumper;
 
-import com.google.gson.Gson;
+import com.google.common.collect.Lists;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
@@ -20,47 +20,42 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistry;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 @SuppressWarnings({"unchecked"})
-public class BlockRegistryDumper {
-
-    private File file;
-    private Gson gson;
+public class BlockRegistryDumper extends RegistryDumper<Block> {
 
     public BlockRegistryDumper(File file) {
-        this.file = file;
-        GsonBuilder builder = new GsonBuilder().setPrettyPrinting();
+        super(file);
+    }
+
+    @Override
+    public void registerAdapters(GsonBuilder builder) {
+        super.registerAdapters(builder);
+
         builder.registerTypeAdapter(Vec3i.class, new Vec3iAdapter());
         builder.registerTypeAdapter(Vec3d.class, new Vec3dAdapter());
-        this.gson = builder.create();
     }
 
-    public void run() throws Exception {
-        List<Map<String, Object>> list = new LinkedList<>();
-
-        IForgeRegistry<Block> registry = ForgeRegistries.BLOCKS;
-        for (Entry<ResourceLocation, Block> e : registry.getEntries()) {
-            list.add(getProperties(e));
-        }
-
-        list.sort(new MapComparator());
-        String out = gson.toJson(list);
-        this.write(out);
-        ForgeUtils.instance.modLogger.info("Wrote file: %s", file.getAbsolutePath());
+    @Override
+    public IForgeRegistry<Block> getRegistry() {
+        return ForgeRegistries.BLOCKS;
     }
 
-    private Map<String, Object> getProperties(Entry<ResourceLocation, Block> e) {
+    @Override
+    public Comparator<Map<String, Object>> getComparator() {
+        return new MapComparator();
+    }
+
+    @Override
+    public List<Map<String, Object>> getProperties(Entry<ResourceLocation, Block> e) {
         Map<String, Object> map = new LinkedHashMap<>();
         Block b = e.getValue();
         map.put("legacyId", Block.getIdFromBlock(b));
@@ -69,7 +64,7 @@ public class BlockRegistryDumper {
         map.put("localizedName", b.getLocalizedName());
         map.put("states", getStates(b));
         map.put("material", getMaterial(b));
-        return map;
+        return Lists.newArrayList(map);
     }
 
     private Map<String, Map> getStates(Block b) {
@@ -260,39 +255,6 @@ public class BlockRegistryDumper {
         map.put("grassBlocking", false); // idk what this property was originally supposed to be...grass uses a combination of light values to check growth
         return map;
     }
-
-    private Object getField(Object obj, Class<?> clazz, String name, String obfName) {
-        try {
-            Field f;
-            try {
-                f = clazz.getDeclaredField(name);
-            } catch (NoSuchFieldException ignored) {
-                f = clazz.getDeclaredField(obfName);
-            }
-            if (f == null) return null;
-            f.setAccessible(true);
-            return f.get(obj);
-        } catch (IllegalAccessException | NoSuchFieldException ignored) {
-        }
-        return null;
-    }
-
-    private String rgb(int i) {
-        int r = (i >> 16) & 0xFF;
-        int g = (i >>  8) & 0xFF;
-        int b = i & 0xFF;
-        return String.format("#%02x%02x%02x", r, g, b);
-    }
-
-    private void write(String s) {
-        try {
-            FileOutputStream str = new FileOutputStream(file);
-            str.write(s.getBytes());
-        } catch (IOException e) {
-            ForgeUtils.instance.modLogger.error("Error writing registry dump: %e", e);
-        }
-    }
-
 
     public static class Vec3iAdapter extends TypeAdapter<Vec3i> {
         @Override

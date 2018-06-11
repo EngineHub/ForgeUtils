@@ -6,6 +6,8 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import org.apache.logging.log4j.Logger;
+import org.enginehub.util.forge.dumper.BlockRegistryDumper;
+import org.enginehub.util.forge.dumper.ItemRegistryDumper;
 
 import java.io.File;
 
@@ -29,6 +31,9 @@ public class ForgeUtils {
         try {
             if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocks"))) {
                 (new BlockRegistryDumper(new File("blocks.json"))).run();
+            }
+            if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpitems"))) {
+                (new ItemRegistryDumper(new File("items.json"))).run();
             }
         } catch (Exception e) {
             modLogger.error("Error running block registry dumper: " +  e);
