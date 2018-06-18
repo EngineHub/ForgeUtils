@@ -7,6 +7,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import org.apache.logging.log4j.Logger;
 import org.enginehub.util.forge.dumper.BlockRegistryDumper;
+import org.enginehub.util.forge.dumper.BlockTypesDumper;
 import org.enginehub.util.forge.dumper.ItemRegistryDumper;
 
 import java.io.File;
@@ -31,6 +32,9 @@ public class ForgeUtils {
         try {
             if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocks"))) {
                 (new BlockRegistryDumper(new File("blocks.json"))).run();
+            }
+            if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocktypes"))) {
+                (new BlockTypesDumper(new File("blocktypes.java"))).run();
             }
             if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpitems"))) {
                 (new ItemRegistryDumper(new File("items.json"))).run();

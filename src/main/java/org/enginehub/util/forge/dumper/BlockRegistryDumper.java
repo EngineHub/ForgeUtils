@@ -9,10 +9,8 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
@@ -24,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,150 +71,21 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
         BlockStateContainer bs = b.getBlockState();
         Collection<IProperty<?>> props = bs.getProperties();
         for (IProperty prop : props) {
-            map.put(prop.getName(), dataValues(b, prop));
+            map.put(prop.getName(), dataValues(prop));
         }
 
         return map;
     }
 
-    private final Vec3d[] rotations = {
-            new Vec3d(0, 0, -1),
-            new Vec3d(0.5, 0, -1),
-            new Vec3d(1, 0, -1),
-            new Vec3d(1, 0, -0.5),
-            new Vec3d(1, 0, 0),
-            new Vec3d(1, 0, 0.5),
-            new Vec3d(1, 0, 1),
-            new Vec3d(0.5, 0, 1),
-            new Vec3d(0, 0, 1),
-            new Vec3d(-0.5, 0, 1),
-            new Vec3d(-1, 0, 1),
-            new Vec3d(-1, 0, 0.5),
-            new Vec3d(-1, 0, 0),
-            new Vec3d(-1, 0, -0.5),
-            new Vec3d(-1, 0, -1),
-            new Vec3d(-0.5, 0, -1)
-    };
-
-
-    private Vec3i addDirection(Object orig, Vec3i addend) {
-        if (orig instanceof Vec3i) {
-            Vec3i ov = ((Vec3i) orig);
-            return new Vec3i(addend.getX() + ov.getX(), addend.getY() + ov.getY(), addend.getZ() + ov.getZ());
-        }
-        return addend;
-    }
-
-    private Map<String, Object> dataValues(Block b, IProperty prop) {
+    private Map<String, List> dataValues(IProperty prop) {
         //BlockState bs = b.getBlockState();
-        IBlockState base = b.getStateFromMeta(0);
-
-        Map<String, Object> dataMap = new LinkedHashMap<>();
-        Map<String, Object> valueMap = new LinkedHashMap<>();
-        List<Integer> dvs = new ArrayList<>();
+        List<Object> valueList = new ArrayList<>();
         for (Comparable val : (Iterable<Comparable>) prop.getAllowedValues()) {
-            Map<String, Object> stateMap = new LinkedHashMap<>();
-            int dv = b.getMetaFromState(base.withProperty(prop, val));
-            stateMap.put("data", dv);
-
-            Map<String, Object> addAfter = null;
-            String addAfterName = null;
-
-            dvs.add(dv);
-
-            if (prop instanceof PropertyDirection) {
-                Vec3i vec = EnumFacing.byName(val.toString()).getDirectionVec();
-                stateMap.put("direction", addDirection(stateMap.get("direction"), vec));
-            } else if (prop.getName().equals("half")) {
-                if (prop.getName(val).equals("top")) {
-                    stateMap.put("direction", addDirection(stateMap.get("direction"), new Vec3i(0, 1, 0)));
-                } else if (prop.getName(val).equals("bottom")) {
-                    stateMap.put("direction", addDirection(stateMap.get("direction"), new Vec3i(0, -1, 0)));
-                }
-            } else if (prop.getName().equals("axis")) {
-                switch (prop.getName(val)) {
-                    case "x":
-                        stateMap.put("direction", new Vec3i(1, 0, 0));
-                        addAfter = new LinkedHashMap<>();
-                        addAfter.put("data", dv);
-                        addAfter.put("direction", new Vec3i(-1, 0, 0));
-                        addAfterName = "-x";
-                        break;
-                    case "y":
-                        stateMap.put("direction", new Vec3i(0, 1, 0));
-                        addAfter = new LinkedHashMap<>();
-                        addAfter.put("data", dv);
-                        addAfter.put("direction", new Vec3i(0, -1, 0));
-                        addAfterName = "-y";
-                        break;
-                    case "z":
-                        stateMap.put("direction", new Vec3i(0, 0, 1));
-                        addAfter = new LinkedHashMap<>();
-                        addAfter.put("data", dv);
-                        addAfter.put("direction", new Vec3i(0, 0, -1));
-                        addAfterName = "-z";
-                        break;
-                }
-            } else if (prop.getName().equals("rotation")) {
-                stateMap.put("direction", rotations[Integer.valueOf(prop.getName(val))]);
-            } else if (prop.getName().equals("facing")) { // usually already instanceof PropertyDirection, unless it's a lever
-                switch (prop.getName(val)) {
-                    case "south":
-                        stateMap.put("direction", new Vec3i(0, 0, 1));
-                        break;
-                    case "north":
-                        stateMap.put("direction", new Vec3i(0, 0, -1));
-                        break;
-                    case "west":
-                        stateMap.put("direction", new Vec3i(-1, 0, 0));
-                        break;
-                    case "east":
-                        stateMap.put("direction", new Vec3i(1, 0, 0));
-                        break;
-                }
-                /*
-                // TODO fix these levers. they disappear right now
-                // excluding them just means they won't get rotated
-                } else if (prop.getName(val).equals("up_x")) {
-                    stateMap.put("direction", new Vec3i(1, 1, 0));
-                    addAfter = new LinkedHashMap<String, Object>();
-                    addAfter.put("data", dv);
-                    addAfter.put("direction", new Vec3i(-1, 1, 0));
-                    addAfterName = "up_-x";
-                } else if (prop.getName(val).equals("up_z")) {
-                    stateMap.put("direction", new Vec3i(0, 1, 1));
-                    addAfter = new LinkedHashMap<String, Object>();
-                    addAfter.put("data", dv);
-                    addAfter.put("direction", new Vec3i(0, 1, -1));
-                    addAfterName = "up_-z";
-                } else if (prop.getName(val).equals("down_x")) {
-                    stateMap.put("direction", new Vec3i(1, -1, 0));
-                    addAfter = new LinkedHashMap<String, Object>();
-                    addAfter.put("data", dv);
-                    addAfter.put("direction", new Vec3i(-1, -1, 0));
-                    addAfterName = "down_-x";
-                } else if (prop.getName(val).equals("down_z")) {
-                    stateMap.put("direction", new Vec3i(0, -1, 1));
-                    addAfter = new LinkedHashMap<String, Object>();
-                    addAfter.put("data", dv);
-                    addAfter.put("direction", new Vec3i(0, -1, -1));
-                    addAfterName = "down_-z";
-                }*/
-            }
-            valueMap.put(prop.getName(val), stateMap);
-            if (addAfter != null) {
-                valueMap.put(addAfterName, addAfter);
-            }
+            valueList.add(prop.getName(val));
         }
 
-        // attempt to calc mask
-        int dataMask = 0;
-        for (int dv : dvs) {
-            dataMask |= dv;
-        }
-        dataMap.put("dataMask", dataMask);
-
-        dataMap.put("values", valueMap);
+        Map<String, List> dataMap = new HashMap<>();
+        dataMap.put("values", valueList);
         return dataMap;
     }
 
@@ -248,9 +118,9 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
         //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
 
         try {
-            map.put("ambientOcclusionLightValue", b.getAmbientOcclusionLightValue(bs));
+            map.put("ambientOcclusionLightValue", bs.getAmbientOcclusionLightValue());
         } catch (NoSuchMethodError ignored) {
-            map.put("ambientOcclusionLightValue", b.isBlockNormalCube(bs) ? 0.2F : 1.0F);
+            map.put("ambientOcclusionLightValue", bs.isBlockNormalCube() ? 0.2F : 1.0F);
         }
         map.put("grassBlocking", false); // idk what this property was originally supposed to be...grass uses a combination of light values to check growth
         return map;
