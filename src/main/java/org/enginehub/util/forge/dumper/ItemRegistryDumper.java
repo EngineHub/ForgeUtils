@@ -6,7 +6,6 @@ import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistry;
-import org.enginehub.util.forge.ForgeUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -49,8 +48,6 @@ public class ItemRegistryDumper extends RegistryDumper<Item> {
 
     private Map<String, Object> getPropertiesForItem(ResourceLocation resourceLocation, ItemStack itemStack) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("legacyId", Item.getIdFromItem(itemStack.getItem()));
-        map.put("legacyData", itemStack.getItemDamage());
         map.put("id", resourceLocation.toString());
         map.put("unlocalizedName", itemStack.getUnlocalizedName());
         map.put("localizedName", itemStack.getDisplayName());
@@ -62,7 +59,7 @@ public class ItemRegistryDumper extends RegistryDumper<Item> {
     private static class MapComparator implements Comparator<Map<String, Object>> {
         @Override
         public int compare(Map<String, Object> a, Map<String, Object> b) {
-            return ((Integer) a.get("legacyId")).compareTo((Integer) b.get("legacyId"));
+            return ((String) a.get("id")).compareTo((String) b.get("id"));
         }
     }
 }

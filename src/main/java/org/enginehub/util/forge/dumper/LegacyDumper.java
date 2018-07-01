@@ -6,7 +6,6 @@ import com.google.gson.GsonBuilder;
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
@@ -18,8 +17,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -56,99 +53,11 @@ public class LegacyDumper {
     }
 
     private String convertItem(String itemId, int data) {
-        itemId = itemId.replace("minecraft:", "");
-        Item item = Item.getByNameOrId(itemId);
-        Block block = Block.getBlockFromItem(item);
-        Map<String, String> properties = new HashMap<>();
-        try {
-            properties = stringifyProperties(block.getStateFromMeta(item.getMetadata(data)).getProperties());
-        } catch (Exception e) {}
-        switch (itemId) {
-            case "bed":
-                properties.put("color", String.valueOf(EnumDyeColor.byMetadata(data)));
-                break;
-            case "dye":
-                properties.put("color", String.valueOf(EnumDyeColor.byDyeDamage(data)));
-                break;
-            case "banner":
-                properties.put("color", String.valueOf(EnumDyeColor.byDyeDamage(data & 15)));
-                break;
-        }
-        if (itemId.startsWith("record_")) {
-            itemId = itemId.replace("record_", "music_disk_");
-        }
-        itemId = convertBlockAndProperties(itemId, properties);
-        return itemId.split("\\[")[0];
+        return itemId + "." + data;
     }
 
     private String convertBlockAndProperties(String blockId, Map<String, String> propertyMap) {
-        blockId = blockId.replace("minecraft:", "");
-        if (blockId.contains(":")) {
-            System.out.println("Found non-minecraft block '" + blockId + "'. Skipping");
-            return blockId + normaliseProperties(propertyMap);
-        }
-
-        // Convert block IDs.
-        switch (blockId) {
-            case "grass":
-                blockId = "grass_block";
-                break;
-            case "silver_glazed_terracotta":
-                blockId = "light_gray_glazed_terracotta";
-                break;
-            case "silver_shulker_box":
-                blockId = "light_gray_shulker_box";
-                break;
-        }
-
-        // Convert properties
-        Iterator<Map.Entry<String, String>> iterator = propertyMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, String> property = iterator.next();
-            entireProperty:
-            switch (property.getKey()) {
-                case "legacy-data":
-                    iterator.remove();
-                    break;
-                case "color":
-                    String color = property.getValue();
-                    if (color.equals("lightBlue")) {
-                        color = "light_blue";
-                    } else if (color.equals("silver")) {
-                        color = "light_gray";
-                    }
-                    blockId = color + "_" + blockId;
-                    iterator.remove();
-                    break;
-                case "variant":
-                case "type":
-                    switch (blockId) {
-                        case "stone":
-                            blockId = property.getValue().replace("smooth", "polished");
-                            break;
-                        case "dirt":
-                            blockId = property.getValue();
-                            break;
-                        case "planks":
-                        case "sapling":
-                        case "leaves":
-                        case "leaves2":
-                            blockId = property.getValue() + "_" + blockId.replace("2", "");
-                            break;
-                        default:
-                            // No conversion case yet
-                            break entireProperty;
-                    }
-                    iterator.remove();
-                    break;
-            }
-        }
-
-        if (propertyMap.containsKey("variant") || propertyMap.containsKey("type") || propertyMap.containsKey("contents")) {
-            System.out.println("Still to go: " + blockId + normaliseProperties(propertyMap));
-        }
-
-        return "minecraft:" + blockId + normaliseProperties(propertyMap);
+        return blockId + normaliseProperties(propertyMap);
     }
 
     private String normaliseProperties(Map<String, String> propertyMap) {

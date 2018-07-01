@@ -43,7 +43,7 @@ public class ForgeUtils {
                 (new ItemRegistryDumper(new File("items.json"))).run();
             }
             if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumplegacy"))) {
-                (new LegacyDumper(new File("legacy.json"))).run();
+                (new LegacyDumper(new File("legacy_phase1.json"))).run();
             }
         } catch (Exception e) {
             modLogger.error("Error running block registry dumper: " +  e);

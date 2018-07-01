@@ -58,7 +58,6 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
     public List<Map<String, Object>> getProperties(Entry<ResourceLocation, Block> e) {
         Map<String, Object> map = new LinkedHashMap<>();
         Block b = e.getValue();
-        map.put("legacyId", Block.getIdFromBlock(b));
         map.put("id", e.getKey().toString());
         map.put("unlocalizedName", b.getUnlocalizedName());
         map.put("localizedName", b.getLocalizedName());
@@ -160,7 +159,7 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
     private static class MapComparator implements Comparator<Map<String, Object>> {
         @Override
         public int compare(Map<String, Object> a, Map<String, Object> b) {
-            return ((Integer) a.get("legacyId")).compareTo((Integer) b.get("legacyId"));
+            return ((String) a.get("id")).compareTo((String) b.get("id"));
         }
     }
 }
