@@ -16,6 +16,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistry;
+import org.enginehub.util.forge.util.ReflectionUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -92,29 +93,29 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
     private Map<String, Object> getMaterial(Block b) {
         IBlockState bs = b.getDefaultState();
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("powerSource", b.canProvidePower(bs));
-        map.put("lightOpacity", b.getLightOpacity(bs));
-        map.put("lightValue", b.getLightValue(bs));
-        map.put("usingNeighborLight", b.getUseNeighborBrightness(bs));
-        map.put("hardness", getField(b, Block.class, "blockHardness", "field_149782_v"));
-        map.put("resistance", getField(b, Block.class, "blockResistance", "field_149781_w"));
+        map.put("powerSource", bs.canProvidePower());
+        map.put("lightOpacity", bs.getLightOpacity());
+        map.put("lightValue", bs.getLightValue());
+        map.put("usingNeighborLight", bs.useNeighborBrightness());
+        map.put("hardness", ReflectionUtil.getField(b, Block.class, "blockHardness", "field_149782_v"));
+        map.put("resistance", ReflectionUtil.getField(b, Block.class, "blockResistance", "field_149781_w"));
         map.put("ticksRandomly", b.getTickRandomly());
-        map.put("fullCube", b.isFullCube(bs));
+        map.put("fullCube", bs.isFullCube());
         map.put("slipperiness", b.slipperiness);
-        map.put("renderedAsNormalBlock", b.isFullBlock(bs));
+        map.put("renderedAsNormalBlock", bs.isFullBlock());
         //map.put("solidFullCube", b.isSolidFullCube());
-        Material m = b.getMaterial(bs);
+        Material m = bs.getMaterial();
         map.put("liquid", m.isLiquid());
         map.put("solid", m.isSolid());
         map.put("movementBlocker", m.blocksMovement());
-        //map.put("blocksLight", m.blocksLight());
+        map.put("blocksLight", m.blocksLight());
         map.put("burnable", m.getCanBurn());
         map.put("opaque", m.isOpaque());
         map.put("replacedDuringPlacement", m.isReplaceable());
         map.put("toolRequired", !m.isToolNotRequired());
         map.put("fragileWhenPushed", m.getMobilityFlag() == EnumPushReaction.DESTROY);
         map.put("unpushable", m.getMobilityFlag() == EnumPushReaction.BLOCK);
-        map.put("adventureModeExempt", getField(m, Material.class, "isAdventureModeExempt", "field_85159_M"));
+        map.put("adventureModeExempt", ReflectionUtil.getField(m, Material.class, "isAdventureModeExempt", "field_85159_M"));
         //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
 
         try {

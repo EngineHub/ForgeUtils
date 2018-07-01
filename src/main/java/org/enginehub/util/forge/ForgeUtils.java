@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.enginehub.util.forge.dumper.BlockRegistryDumper;
 import org.enginehub.util.forge.dumper.BlockTypesDumper;
 import org.enginehub.util.forge.dumper.ItemRegistryDumper;
+import org.enginehub.util.forge.dumper.LegacyDumper;
 
 import java.io.File;
 
@@ -29,15 +30,20 @@ public class ForgeUtils {
     public void init(FMLPostInitializationEvent event) {
         modLogger.info("ForgeUtils loading.");
 
+        boolean dumpAll = "true".equalsIgnoreCase(System.getProperty("enginehub.dumpall"));
+
         try {
-            if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocks"))) {
+            if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocks"))) {
                 (new BlockRegistryDumper(new File("blocks.json"))).run();
             }
-            if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocktypes"))) {
+            if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocktypes"))) {
                 (new BlockTypesDumper(new File("blocktypes.java"))).run();
             }
-            if ("true".equalsIgnoreCase(System.getProperty("enginehub.dumpitems"))) {
+            if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumpitems"))) {
                 (new ItemRegistryDumper(new File("items.json"))).run();
+            }
+            if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumplegacy"))) {
+                (new LegacyDumper(new File("legacy.json"))).run();
             }
         } catch (Exception e) {
             modLogger.error("Error running block registry dumper: " +  e);

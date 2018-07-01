@@ -10,7 +10,6 @@ import org.enginehub.util.forge.ForgeUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,9 +35,7 @@ abstract class RegistryDumper<V extends IForgeRegistryEntry<V>> {
         List<Map<String, Object>> list = new LinkedList<>();
 
         IForgeRegistry<V> registry = getRegistry();
-        for (Map.Entry<ResourceLocation, V> e : registry.getEntries()) {
-            list.addAll(getProperties(e));
-        }
+        registry.getEntries().stream().map(this::getProperties).forEach(list::addAll);
 
         list.sort(getComparator());
         String out = gson.toJson(list);
@@ -47,8 +44,7 @@ abstract class RegistryDumper<V extends IForgeRegistryEntry<V>> {
     }
 
     private void write(String s) {
-        try {
-            FileOutputStream str = new FileOutputStream(file);
+        try(FileOutputStream str = new FileOutputStream(file)) {
             str.write(s.getBytes());
         } catch (IOException e) {
             ForgeUtils.instance.modLogger.error("Error writing registry dump: %e", e);
@@ -60,22 +56,6 @@ abstract class RegistryDumper<V extends IForgeRegistryEntry<V>> {
         int g = (i >>  8) & 0xFF;
         int b = i & 0xFF;
         return String.format("#%02x%02x%02x", r, g, b);
-    }
-
-    Object getField(Object obj, Class<?> clazz, String name, String obfName) {
-        try {
-            Field f;
-            try {
-                f = clazz.getDeclaredField(name);
-            } catch (NoSuchFieldException ignored) {
-                f = clazz.getDeclaredField(obfName);
-            }
-            if (f == null) return null;
-            f.setAccessible(true);
-            return f.get(obj);
-        } catch (IllegalAccessException | NoSuchFieldException ignored) {
-        }
-        return null;
     }
 
     public abstract List<Map<String, Object>> getProperties(Map.Entry<ResourceLocation, V> entry);
