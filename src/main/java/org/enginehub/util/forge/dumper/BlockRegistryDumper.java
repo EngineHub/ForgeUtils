@@ -6,6 +6,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
@@ -116,6 +117,8 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
         map.put("unpushable", m.getMobilityFlag() == EnumPushReaction.BLOCK);
         map.put("adventureModeExempt", ReflectionUtil.getField(m, Material.class, "isAdventureModeExempt", "field_85159_M"));
         //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
+        map.put("isTranslucent", bs.isTranslucent());
+        map.put("hasContainer", b instanceof BlockContainer);
 
         try {
             map.put("ambientOcclusionLightValue", bs.getAmbientOcclusionLightValue());
