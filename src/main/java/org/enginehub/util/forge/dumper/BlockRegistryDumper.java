@@ -9,8 +9,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
@@ -21,10 +19,7 @@ import org.enginehub.util.forge.util.ReflectionUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,34 +55,9 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
         Map<String, Object> map = new LinkedHashMap<>();
         Block b = e.getValue();
         map.put("id", e.getKey().toString());
-        map.put("unlocalizedName", b.getUnlocalizedName());
         map.put("localizedName", b.getLocalizedName());
-        map.put("states", getStates(b));
         map.put("material", getMaterial(b));
         return Lists.newArrayList(map);
-    }
-
-    private Map<String, Map> getStates(Block b) {
-        Map<String, Map> map = new LinkedHashMap<>();
-        BlockStateContainer bs = b.getBlockState();
-        Collection<IProperty<?>> props = bs.getProperties();
-        for (IProperty prop : props) {
-            map.put(prop.getName(), dataValues(prop));
-        }
-
-        return map;
-    }
-
-    private Map<String, List> dataValues(IProperty prop) {
-        //BlockState bs = b.getBlockState();
-        List<Object> valueList = new ArrayList<>();
-        for (Comparable val : (Iterable<Comparable>) prop.getAllowedValues()) {
-            valueList.add(prop.getName(val));
-        }
-
-        Map<String, List> dataMap = new HashMap<>();
-        dataMap.put("values", valueList);
-        return dataMap;
     }
 
     private Map<String, Object> getMaterial(Block b) {
@@ -117,7 +87,7 @@ public class BlockRegistryDumper extends RegistryDumper<Block> {
         map.put("unpushable", m.getMobilityFlag() == EnumPushReaction.BLOCK);
         map.put("adventureModeExempt", ReflectionUtil.getField(m, Material.class, "isAdventureModeExempt", "field_85159_M"));
         //map.put("mapColor", rgb(m.getMaterialMapColor().colorValue));
-        map.put("isTranslucent", bs.isTranslucent());
+        map.put("isTranslucent", ReflectionUtil.getField(b, Block.class, "translucent", "field_149785_s"));
         map.put("hasContainer", b instanceof BlockContainer);
 
         try {
