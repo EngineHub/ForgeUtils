@@ -6,9 +6,6 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import org.apache.logging.log4j.Logger;
-import org.enginehub.util.forge.dumper.BlockRegistryDumper;
-import org.enginehub.util.forge.dumper.BlockTypesDumper;
-import org.enginehub.util.forge.dumper.ItemRegistryDumper;
 import org.enginehub.util.forge.dumper.LegacyDumper;
 
 import java.io.File;
@@ -33,15 +30,6 @@ public class ForgeUtils {
         boolean dumpAll = "true".equalsIgnoreCase(System.getProperty("enginehub.dumpall"));
 
         try {
-            if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocks"))) {
-                (new BlockRegistryDumper(new File("blocks.json"))).run();
-            }
-            if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumpblocktypes"))) {
-                (new BlockTypesDumper(new File("blocktypes.java"))).run();
-            }
-            if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumpitems"))) {
-                (new ItemRegistryDumper(new File("items.json"))).run();
-            }
             if (dumpAll || "true".equalsIgnoreCase(System.getProperty("enginehub.dumplegacy"))) {
                 (new LegacyDumper(new File("legacy_phase1.json"))).run();
             }
